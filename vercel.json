@@ -1,0 +1,14 @@
+{
+  "experimentalServices": {
+    "frontend": {
+      "root": "frontend",
+      "framework": "vite",
+      "mount": "/"
+    },
+    "backend": {
+      "root": "backend",
+      "runtime": "python3.9",
+      "mount": "/api"
+    }
+  }
+}
