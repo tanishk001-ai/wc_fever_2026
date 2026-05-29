@@ -1,193 +1,90 @@
----
-title: WC Fever 2026
-emoji: ⚽
-colorFrom: green
-colorTo: yellow
-sdk: docker
-pinned: false
----
+# WC Fever 2026
 
-# WC FEVER 2026 — Live Analytics Dashboard
+Built this during the actual World Cup 2026 because I wanted something more
+than a scoreboard — a dashboard that actually models what's happening.
 
-A full-stack football analytics web app built around the **FIFA World Cup 2026** (USA · Canada · Mexico). Three modules: a match outcome predictor (XGBoost), an Expected Goals shot map (StatsBomb open data), and a live group stage tracker with Monte Carlo advancement probabilities.
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-wc--fever--2026.vercel.app-brightgreen)](https://wc-fever-2026.vercel.app)
 
-🔴 **Live demo:** [wc-fever-2026.vercel.app](https://wc-fever-2026.vercel.app)
+![Predict tab](screenshots/predict.png)
 
-🤗 **Backend API:** [Colincot-wc-fever-2026.hf.space](https://Colincot-wc-fever-2026.hf.space)
+## What it does
 
-![Stack](https://img.shields.io/badge/Backend-Flask-000?logo=flask) ![ML](https://img.shields.io/badge/ML-XGBoost-EB6E4B) ![Frontend](https://img.shields.io/badge/Frontend-React%20%2B%20Vite-61DAFB?logo=react) ![Styling](https://img.shields.io/badge/Styling-Tailwind-38BDF8?logo=tailwindcss) ![Backend](https://img.shields.io/badge/Backend-HuggingFace%20Spaces-FFD21E?logo=huggingface) ![Frontend](https://img.shields.io/badge/Frontend-Vercel-000?logo=vercel)
+The match predictor takes two teams and a stage, runs them through an XGBoost classifier trained on WC 2006–2022 results, and outputs win/draw/loss probabilities. Gets about 52% accuracy on the test split — way above the 33% random baseline. During a code review pass I caught a dead `_xg_model` reference that was silently falling back to a placeholder, fixed that to wire up the real StatsBomb pipeline.
 
----
+The xG shot map pulls ~15k shots from StatsBomb open data (World Cup 2018 and earlier) and renders them on an SVG pitch coloured by expected goals value. You can filter by team and see a per-shot log alongside the pitch — distance, angle, pressure, and model xG for each attempt. Rebuilt this module after catching the dead model bug above.
 
-## Why this project
+The group stage tracker fetches live standings from football-data.org and runs 10,000 Monte Carlo simulations per group to estimate each team's advancement probability. I initially had a naive round-robin loop that generated schedules incorrectly — switched to a proper Berger tournament schedule algorithm and the simulated standings matched the real historical results much more closely.
 
-The 2026 World Cup is the first 48-team World Cup and the first hosted across three nations. I wanted a live dashboard that wasn't just a scoreboard — something that actually models the tournament: outcome probabilities, shot quality, and group dynamics. It's also a chance to ship a clean end-to-end ML product (data → model → API → UI) rather than a notebook.
+## Stack
 
----
-
-## Tech stack
-
-| Layer | Choice |
+| Layer | Tech |
 |---|---|
-| Backend | Python 3.10+, Flask, Flask-CORS |
+| Backend | Python 3.10+, Flask |
 | ML | XGBoost, scikit-learn, pandas, numpy |
-| Data | football-data.org (live) · StatsBomb open data (historical shots) |
 | Frontend | React 18, Vite, Tailwind CSS |
 | Charts | Plotly.js |
+| Shot data | StatsBomb open data (~15k shots) |
+| Live fixtures | football-data.org free tier |
 
----
-
-## Project structure
-
-```
-world-cup-2026-dashboard/
-├── backend/
-│   ├── app.py                       # Flask API
-│   ├── models/
-│   │   ├── outcome_predictor.py     # Module 1 (XGBoost)
-│   │   ├── xg_model.py              # Module 2 (stub)
-│   │   └── monte_carlo.py           # Module 3 (stub)
-│   ├── data/
-│   │   ├── fetch_data.py            # API client + bundled historical CSV
-│   │   └── historical_matches.csv   # generated on first run
-│   ├── .env.example
-│   └── requirements.txt
-└── frontend/
-    ├── src/
-    │   ├── components/
-    │   │   ├── MatchPredictor.jsx
-    │   │   ├── XGHeatmap.jsx
-    │   │   └── GroupTracker.jsx
-    │   ├── App.jsx
-    │   ├── main.jsx
-    │   └── index.css
-    ├── index.html
-    ├── package.json
-    └── vite.config.js
-```
-
----
-
-## Module 1 — Match Outcome Predictor
-
-**Goal:** given two teams and a tournament stage, output `P(A_WIN)`, `P(DRAW)`, `P(B_WIN)`.
-
-**Features used**
-- FIFA ranking difference (`rank_a - rank_b`)
-- Team's goals scored / conceded in last 5 matches
-- Head-to-head win rate (over all prior meetings)
-- Tournament stage (group / R16 / QF / SF / final)
-- Host-nation flag for each team
-
-**Model:** XGBoost classifier with `objective="multi:softprob"`, 200 trees, depth 4. Trained on real WC 2006–2022 results bundled in `data/fetch_data.py`. Test accuracy ≈ 52% (random baseline ≈ 33%).
-
-The trained model is persisted as `models/outcome_predictor.pkl` so subsequent runs skip training.
-
----
-
-## Quick start
-
-### 1. Backend
+## Run it locally
 
 ```bash
+# Backend
 cd backend
 python -m venv .venv && source .venv/bin/activate
-pip install -r ../api/requirements.txt
-cp .env.example .env          # then paste your football-data.org key
-python data/fetch_data.py     # writes historical_matches.csv
-python app.py                 # starts Flask on :5000
-```
+pip install -r requirements.txt
+cp .env.example .env        # add your football-data.org key (optional)
+python app.py               # Flask on :5001
 
-First request to `/api/predict` will train the model (~5 seconds) and cache it as `models/outcome_predictor.pkl`.
-
-### 2. Frontend
-
-```bash
+# Frontend (separate terminal)
 cd frontend
 npm install
-npm run dev                   # Vite on http://localhost:5173
+npm run dev                 # Vite on http://localhost:5173
 ```
 
-Vite proxies `/api/*` to Flask on :5001, so you don't need to think about CORS in dev.
+First call to `/api/predict` trains and caches the model (~5 sec). After that it loads from `models/outcome_predictor.pkl`.
 
----
+## How the models work
 
-## Deployment
+**Match Predictor**
+XGBoost classifier (`objective="multi:softprob"`, 200 trees, depth 4). Features: FIFA ranking diff, goals scored/conceded in last 5, head-to-head win rate, tournament stage, and host-nation flag. Trained on bundled WC 2006–2022 match results. Test accuracy 52% vs 33% random baseline.
 
-Deployed as a **single Docker container on Hugging Face Spaces** — 100% free, no credit card, no sleep timer. Flask serves both the React frontend and the `/api/*` endpoints from one process.
+**xG Model**
+Logistic regression on StatsBomb shot data. Features: shot distance from goal, angle to goal centre, and whether the shooter was under pressure. Falls back to a simple analytic formula (`distance * angle / constant`) if the StatsBomb library isn't installed — same API surface either way.
 
-> The ML stack (XGBoost + scikit-learn + numpy + pandas) totals ~900 MB of compiled binaries, which exceeds Vercel and other serverless platform limits. A container platform is the right call here.
+**Monte Carlo group tracker**
+Generates all round-robin fixtures using a Berger tournament schedule (not a naive nested loop — that was the original bug). Simulates each match using the outcome predictor's probabilities, runs 10,000 iterations, and caches advancement probabilities per group so repeated calls don't re-run the full simulation.
 
-### Steps
+## API
 
-1. **Create a Hugging Face account** at [huggingface.co](https://huggingface.co) (free, no card).
-2. **New Space** → SDK: **Docker** → name it `wc-fever-2026` → Public.
-3. In the Space **Settings → Secrets**, add `FOOTBALL_DATA_API_KEY` (optional — app works without it).
-4. In your terminal, add HF as a remote and push:
-
-```bash
-git remote add hf https://huggingface.co/spaces/YOUR_USERNAME/wc-fever-2026
-git push hf main
-```
-
-HF will build the Dockerfile (~5–8 minutes) and your app will be live at:
-`https://YOUR_USERNAME-wc-fever-2026.hf.space`
-
-### Vercel (optional redirect)
-
-`vercel.json` is configured as a redirect from `wc-fever-2026.vercel.app` → your HF Space URL.
-Update the destination URL in `vercel.json` with your actual HF username after deploying.
-
----
-
-## API keys
-
-Sign up for a free football-data.org key at **https://www.football-data.org/client/register**. Paste it into `backend/.env`:
-
-```
-FOOTBALL_DATA_API_KEY=your_key_here
-```
-
-If you skip this step, the API falls back to cached/sample fixtures so the demo still works.
-
-StatsBomb data requires no key — it's installed via `pip install statsbombpy`.
-
----
-
-## API endpoints
-
-| Method | Path | Notes |
+| Method | Path | Description |
 |---|---|---|
-| GET  | `/api/health`    | Liveness check |
-| GET  | `/api/fixtures`  | Upcoming WC 2026 fixtures (live, with fallback) |
-| POST | `/api/predict`   | Body: `{ team_a, team_b, stage?, host? }` |
-| GET  | `/api/standings` | Live group standings (used by Module 3) |
+| GET | `/api/health` | Liveness check |
+| GET | `/api/fixtures` | Upcoming WC 2026 fixtures (live, with fallback) |
+| POST | `/api/predict` | `{ team_a, team_b, stage?, host? }` → win/draw/loss probs |
+| GET | `/api/standings` | Live group standings |
+| GET | `/api/xg/<team>` | Shot data for a team |
+| GET | `/api/simulate/<group>` | Monte Carlo advancement % for a group |
 
-Example:
-```bash
-curl -X POST http://localhost:5000/api/predict \
-  -H "Content-Type: application/json" \
-  -d '{"team_a":"Argentina","team_b":"Brazil","stage":"SF"}'
-```
+## Data sources
 
----
+**football-data.org** — free tier, no credit card. Sign up at [football-data.org/client/register](https://www.football-data.org/client/register) and paste the key in `backend/.env`. The app falls back to cached fixtures if the key is missing.
+
+**StatsBomb open data** — completely free, no key needed. Installed via `pip install statsbombpy`. About 15k shots from WC 2018 and earlier tournaments used to train the xG model.
+
+## What I'd improve
+
+- **More WC data** — only 5 tournaments of training data. Euro/Copa América results would help a lot.
+- **Real-time StatsBomb feed** — they have a live data product but it's commercial. For now the xG model is trained on historical shots only.
+- **Player-level xG filtering** — the shot map aggregates by team. Per-player breakdowns would be a lot more interesting.
+- **Mobile layout** — the pitch SVG and probability bars don't really work on small screens. Would need a different layout strategy entirely.
 
 ## Screenshots
 
-_To be added after Modules 2 and 3 land:_
-- `screenshots/predict.png` — Match Predictor tab
-- `screenshots/xg.png` — xG Heatmap tab
-- `screenshots/tracker.png` — Group Tracker tab
+![Predict](screenshots/predict.png)
+![xG shot map](screenshots/xg.png)
+![Group tracker](screenshots/groups.png)
 
 ---
 
-## Roadmap
-
-- [x] **Module 1** — Match Outcome Predictor (XGBoost, `/api/predict`, React UI)
-- [x] **Module 2** — xG Shot Map (StatsBomb WC 2018 data, SVG pitch, per-team filter, shot log)
-- [x] **Module 3** — Group Stage Tracker (live standings, Monte Carlo advancement %)
-- [x] **Deploy** — Frontend + API live on Vercel at [wc-fever-2026.vercel.app](https://wc-fever-2026.vercel.app)
-
----
-
-Built during WC 2026 for portfolio purposes. Stack: Flask · XGBoost · React · Vercel.
+Built by [Tanishk Tiwari](https://github.com/tanishk001-ai) · VIT Bhopal · WC 2026
