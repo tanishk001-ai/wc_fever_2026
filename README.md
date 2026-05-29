@@ -1,10 +1,21 @@
+---
+title: WC Fever 2026
+emoji: ⚽
+colorFrom: green
+colorTo: yellow
+sdk: docker
+pinned: false
+---
+
 # WC FEVER 2026 — Live Analytics Dashboard
 
 A full-stack football analytics web app built around the **FIFA World Cup 2026** (USA · Canada · Mexico). Three modules: a match outcome predictor (XGBoost), an Expected Goals shot map (StatsBomb open data), and a live group stage tracker with Monte Carlo advancement probabilities.
 
 🔴 **Live demo:** [wc-fever-2026.vercel.app](https://wc-fever-2026.vercel.app)
 
-![Stack](https://img.shields.io/badge/Backend-Flask-000?logo=flask) ![ML](https://img.shields.io/badge/ML-XGBoost-EB6E4B) ![Frontend](https://img.shields.io/badge/Frontend-React%20%2B%20Vite-61DAFB?logo=react) ![Styling](https://img.shields.io/badge/Styling-Tailwind-38BDF8?logo=tailwindcss) ![Deploy](https://img.shields.io/badge/Deployed-Vercel-000?logo=vercel)
+🤗 **Backend API:** [Colincot-wc-fever-2026.hf.space](https://Colincot-wc-fever-2026.hf.space)
+
+![Stack](https://img.shields.io/badge/Backend-Flask-000?logo=flask) ![ML](https://img.shields.io/badge/ML-XGBoost-EB6E4B) ![Frontend](https://img.shields.io/badge/Frontend-React%20%2B%20Vite-61DAFB?logo=react) ![Styling](https://img.shields.io/badge/Styling-Tailwind-38BDF8?logo=tailwindcss) ![Backend](https://img.shields.io/badge/Backend-HuggingFace%20Spaces-FFD21E?logo=huggingface) ![Frontend](https://img.shields.io/badge/Frontend-Vercel-000?logo=vercel)
 
 ---
 
