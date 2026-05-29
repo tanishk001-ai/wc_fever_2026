@@ -5,6 +5,7 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react'
+import API_BASE from '../config.js'
 
 // ── Design tokens ─────────────────────────────────────────────────────────────
 const GREEN  = '#00ff87'
@@ -218,7 +219,7 @@ export default function GroupTracker({ onLiveChange }) {
 
   const fetchStandings = useCallback(async () => {
     try {
-      const res = await fetch('/api/standings')
+      const res = await fetch(`${API_BASE}/api/standings`)
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const data = await res.json()
       setGroups(data.groups ?? [])

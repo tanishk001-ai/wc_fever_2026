@@ -181,6 +181,26 @@ def xg_shots():
         return jsonify({"error": str(exc)}), 500
 
 
+# ── Static frontend serving ───────────────────────────────────────────────────
+# When deployed as a single process (HF Spaces, Docker), Flask serves the
+# React build directly.  Only activates if frontend/dist exists — harmless in
+# plain local-backend mode where Vite runs separately.
+from flask import send_from_directory as _sfd  # noqa: E402
+
+_DIST = BACKEND_DIR / ".." / "frontend" / "dist"
+
+if _DIST.is_dir():
+    @app.route("/", defaults={"path": ""})
+    @app.route("/<path:path>")
+    def serve_frontend(path):
+        # API routes registered above always win — this catch-all only fires
+        # for paths that don't match any /api/* route.
+        target = _DIST / path
+        if path and target.exists():
+            return _sfd(str(_DIST), path)
+        return _sfd(str(_DIST), "index.html")
+
+
 if __name__ == "__main__":
     port = int(os.getenv("FLASK_PORT", "5000"))
     app.run(host="0.0.0.0", port=port, debug=True)
