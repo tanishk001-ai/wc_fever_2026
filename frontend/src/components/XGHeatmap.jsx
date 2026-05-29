@@ -5,6 +5,7 @@
  */
 
 import { useState, useEffect, useRef } from 'react'
+import API_BASE from '../config.js'
 
 // ── Design tokens (inline hex, no Tailwind color classes) ────────────────────
 const GREEN  = '#00ff87'
@@ -180,7 +181,7 @@ export default function XGHeatmap() {
   const svgWrapRef = useRef(null)
 
   useEffect(() => {
-    fetch('/api/xg/teams')
+    fetch(`${API_BASE}/api/xg/teams`)
       .then(r => r.json())
       .then(d => { if (d.teams?.length) setTeams(d.teams) })
       .catch(() => {})
@@ -193,7 +194,7 @@ export default function XGHeatmap() {
     setShotData(null)
     setHovered(null)
 
-    fetch(`/api/xg/shots?team=${encodeURIComponent(selectedTeam)}`)
+    fetch(`${API_BASE}/api/xg/shots?team=${encodeURIComponent(selectedTeam)}`)
       .then(r => r.json())
       .then(d => {
         if (d.error) throw new Error(d.error)

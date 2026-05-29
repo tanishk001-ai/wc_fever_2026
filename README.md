@@ -1,10 +1,10 @@
-# World Cup 2026 Live Analytics Dashboard
+# WC FEVER 2026 — Live Analytics Dashboard
 
-A full-stack football analytics web app built around the **FIFA World Cup 2026** (USA · Canada · Mexico). Three modules: a match outcome predictor (XGBoost), an Expected Goals heatmap (StatsBomb open data), and a live group stage tracker with Monte Carlo advancement probabilities.
+A full-stack football analytics web app built around the **FIFA World Cup 2026** (USA · Canada · Mexico). Three modules: a match outcome predictor (XGBoost), an Expected Goals shot map (StatsBomb open data), and a live group stage tracker with Monte Carlo advancement probabilities.
 
-> **Status:** Module 1 (Match Predictor) is live. Modules 2 (xG Heatmap) and 3 (Group Tracker) are stubbed in the UI and will land next.
+🔴 **Live demo:** [wc-fever-2026.vercel.app](https://wc-fever-2026.vercel.app)
 
-![Stack](https://img.shields.io/badge/Backend-Flask-000?logo=flask) ![ML](https://img.shields.io/badge/ML-XGBoost-EB6E4B) ![Frontend](https://img.shields.io/badge/Frontend-React%20%2B%20Vite-61DAFB?logo=react) ![Styling](https://img.shields.io/badge/Styling-Tailwind-38BDF8?logo=tailwindcss)
+![Stack](https://img.shields.io/badge/Backend-Flask-000?logo=flask) ![ML](https://img.shields.io/badge/ML-XGBoost-EB6E4B) ![Frontend](https://img.shields.io/badge/Frontend-React%20%2B%20Vite-61DAFB?logo=react) ![Styling](https://img.shields.io/badge/Styling-Tailwind-38BDF8?logo=tailwindcss) ![Deploy](https://img.shields.io/badge/Deployed-Vercel-000?logo=vercel)
 
 ---
 
@@ -81,7 +81,7 @@ The trained model is persisted as `models/outcome_predictor.pkl` so subsequent r
 ```bash
 cd backend
 python -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
+pip install -r ../api/requirements.txt
 cp .env.example .env          # then paste your football-data.org key
 python data/fetch_data.py     # writes historical_matches.csv
 python app.py                 # starts Flask on :5000
@@ -97,7 +97,35 @@ npm install
 npm run dev                   # Vite on http://localhost:5173
 ```
 
-Vite proxies `/api/*` to Flask, so you don't need to think about CORS in dev.
+Vite proxies `/api/*` to Flask on :5001, so you don't need to think about CORS in dev.
+
+---
+
+## Deployment
+
+Deployed as a **single Docker container on Hugging Face Spaces** — 100% free, no credit card, no sleep timer. Flask serves both the React frontend and the `/api/*` endpoints from one process.
+
+> The ML stack (XGBoost + scikit-learn + numpy + pandas) totals ~900 MB of compiled binaries, which exceeds Vercel and other serverless platform limits. A container platform is the right call here.
+
+### Steps
+
+1. **Create a Hugging Face account** at [huggingface.co](https://huggingface.co) (free, no card).
+2. **New Space** → SDK: **Docker** → name it `wc-fever-2026` → Public.
+3. In the Space **Settings → Secrets**, add `FOOTBALL_DATA_API_KEY` (optional — app works without it).
+4. In your terminal, add HF as a remote and push:
+
+```bash
+git remote add hf https://huggingface.co/spaces/YOUR_USERNAME/wc-fever-2026
+git push hf main
+```
+
+HF will build the Dockerfile (~5–8 minutes) and your app will be live at:
+`https://YOUR_USERNAME-wc-fever-2026.hf.space`
+
+### Vercel (optional redirect)
+
+`vercel.json` is configured as a redirect from `wc-fever-2026.vercel.app` → your HF Space URL.
+Update the destination URL in `vercel.json` with your actual HF username after deploying.
 
 ---
 
@@ -144,11 +172,11 @@ _To be added after Modules 2 and 3 land:_
 
 ## Roadmap
 
-- [x] **Module 1** — Match Outcome Predictor (XGBoost, /api/predict, React UI)
-- [ ] **Module 2** — xG Heatmap (StatsBomb shots, SVG pitch, per-team filter)
-- [ ] **Module 3** — Group Stage Tracker (live standings, Monte Carlo advancement %)
-- [ ] Deploy backend to Render / frontend to Vercel
+- [x] **Module 1** — Match Outcome Predictor (XGBoost, `/api/predict`, React UI)
+- [x] **Module 2** — xG Shot Map (StatsBomb WC 2018 data, SVG pitch, per-team filter, shot log)
+- [x] **Module 3** — Group Stage Tracker (live standings, Monte Carlo advancement %)
+- [x] **Deploy** — Frontend + API live on Vercel at [wc-fever-2026.vercel.app](https://wc-fever-2026.vercel.app)
 
 ---
 
-Built during WC 2026 for portfolio purposes.
+Built during WC 2026 for portfolio purposes. Stack: Flask · XGBoost · React · Vercel.

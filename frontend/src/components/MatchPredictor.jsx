@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import Plot from 'react-plotly.js'
+import API_BASE from '../config.js'
 
 const STAGES = [
   { value: 'GROUP', label: 'Group Stage' },
@@ -70,7 +71,7 @@ export default function MatchPredictor() {
   const [error, setError]           = useState(null)
 
   useEffect(() => {
-    fetch('/api/fixtures')
+    fetch(`${API_BASE}/api/fixtures`)
       .then(r => r.json())
       .then(data => {
         setFixtures(data.fixtures || [])
@@ -85,7 +86,7 @@ export default function MatchPredictor() {
     if (!selected) return
     setLoading(true); setError(null); setResult(null)
     try {
-      const resp = await fetch('/api/predict', {
+      const resp = await fetch(`${API_BASE}/api/predict`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ team_a: selected.team_a, team_b: selected.team_b, stage }),
