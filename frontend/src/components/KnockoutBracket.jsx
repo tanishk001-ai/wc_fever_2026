@@ -10,7 +10,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react'
-import { API_BASE } from '../config.js'
+import API_BASE from '../config.js'
 
 // ── Colors ────────────────────────────────────────────────────────────────────
 const GREEN  = '#00ff87'
