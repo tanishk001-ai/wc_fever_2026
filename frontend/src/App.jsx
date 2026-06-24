@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react'
 import MatchPredictor from './components/MatchPredictor.jsx'
 import XGHeatmap from './components/XGHeatmap.jsx'
 import GroupTracker from './components/GroupTracker.jsx'
+import KnockoutBracket from './components/KnockoutBracket.jsx'
 
 export default function App() {
   const [active, setActive]               = useState('predict')
@@ -12,9 +13,10 @@ export default function App() {
   }, [])
 
   const TABS = [
-    { id: 'predict', label: 'PREDICT',   component: <MatchPredictor /> },
-    { id: 'xg',      label: 'XG MAP',    component: <XGHeatmap /> },
-    { id: 'tracker', label: 'GROUPS',    component: <GroupTracker onLiveChange={handleLiveChange} /> },
+    { id: 'predict',  label: 'PREDICT',  component: <MatchPredictor /> },
+    { id: 'xg',       label: 'XG MAP',   component: <XGHeatmap /> },
+    { id: 'tracker',  label: 'GROUPS',   component: <GroupTracker onLiveChange={handleLiveChange} /> },
+    { id: 'bracket',  label: 'BRACKET',  component: <KnockoutBracket /> },
   ]
 
   return (

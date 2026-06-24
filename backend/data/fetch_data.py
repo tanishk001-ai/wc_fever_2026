@@ -388,8 +388,8 @@ def fetch_upcoming_fixtures() -> list[dict]:
         FIXTURES_CACHE.write_text(json.dumps(fixtures, indent=2))
         return fixtures
 
-    # Fallback: cached file if it exists
-    if FIXTURES_CACHE.exists():
+    # Only trust cache when API key is configured (cache = real data)
+    if API_KEY != "YOUR_API_KEY" and FIXTURES_CACHE.exists():
         return json.loads(FIXTURES_CACHE.read_text())
 
     # Final fallback: hardcoded sample fixtures (WC 2026 hosts: USA, Canada, Mexico)
@@ -437,38 +437,271 @@ def fetch_group_standings() -> list[dict]:
         STANDINGS_CACHE.write_text(json.dumps(groups, indent=2))
         return groups
 
-    if STANDINGS_CACHE.exists():
+    # Only trust the cache when an API key is set — it means the cache was
+    # written from a real live API call, not stale pre-tournament zeros.
+    if API_KEY != "YOUR_API_KEY" and STANDINGS_CACHE.exists():
         return json.loads(STANDINGS_CACHE.read_text())
 
-    # Hardcoded fallback (12 groups in WC 2026; showing 4 for brevity)
+    # No API key → always use the hardcoded real-world fallback data.
     return _fallback_standings()
 
 
 def _fallback_standings() -> list[dict]:
-    """Cached sample standings used when no API key is configured."""
-    # Each group shows 1 played round: 1 win (3 pts), 2 draws (1 pt each), 1 loss (0 pts).
-    # GDs balance to zero per group: +1, 0, 0, -1.
+    """
+    Real WC 2026 group standings fallback (after matchday 2, ~June 24 2026).
+    Used when no football-data.org API key is configured.
+    Format per team: (name, played, won, draw, lost, points, goal_diff)
+    """
     sample = [
-        ("Group A", [("Mexico", 3, 1), ("Iceland", 1, 0), ("Algeria", 1, 0), ("USA", 0, -1)]),
-        ("Group B", [("Argentina", 3, 1), ("Brazil", 1, 0), ("Portugal", 1, 0), ("Saudi Arabia", 0, -1)]),
-        ("Group C", [("France", 3, 1), ("Germany", 1, 0), ("Croatia", 1, 0), ("Senegal", 0, -1)]),
-        ("Group D", [("England", 3, 1), ("Spain", 1, 0), ("Belgium", 1, 0), ("Australia", 0, -1)]),
+        ("Group A", [
+            ("Mexico",       2, 2, 0, 0, 6,  3),
+            ("South Korea",  2, 1, 0, 1, 3,  0),
+            ("Czechia",      2, 1, 0, 1, 3, -1),
+            ("South Africa", 2, 0, 0, 2, 0, -2),
+        ]),
+        ("Group B", [
+            ("Canada",      2, 1, 1, 0, 4,  2),
+            ("Switzerland", 2, 1, 1, 0, 4,  1),
+            ("Bosnia",      2, 0, 1, 1, 1, -1),
+            ("Qatar",       2, 0, 1, 1, 1, -2),
+        ]),
+        ("Group C", [
+            ("Brazil",   2, 1, 1, 0, 4,  3),
+            ("Scotland", 2, 1, 0, 1, 3,  0),
+            ("Morocco",  2, 0, 2, 0, 2,  0),
+            ("Haiti",    2, 0, 0, 2, 0, -3),
+        ]),
+        ("Group D", [
+            ("USA",       2, 2, 0, 0, 6,  5),
+            ("Australia", 2, 1, 0, 1, 3,  0),
+            ("Paraguay",  2, 1, 0, 1, 3, -1),
+            ("Turkiye",   2, 0, 0, 2, 0, -4),
+        ]),
+        ("Group E", [
+            ("Germany",     2, 2, 0, 0, 6,  8),
+            ("Ecuador",     2, 1, 0, 1, 3,  0),
+            ("Ivory Coast", 2, 0, 1, 1, 1, -2),
+            ("Curacao",     2, 0, 0, 2, 0, -6),
+        ]),
+        ("Group F", [
+            ("Sweden",      2, 2, 0, 0, 6,  5),
+            ("Japan",       2, 1, 0, 1, 3,  2),
+            ("Netherlands", 2, 1, 0, 1, 3,  0),
+            ("Tunisia",     2, 0, 0, 2, 0, -7),
+        ]),
+        ("Group G", [
+            ("Belgium",     2, 1, 1, 0, 4,  2),
+            ("Iran",        2, 1, 0, 1, 3,  1),
+            ("Egypt",       2, 0, 2, 0, 2,  0),
+            ("New Zealand", 2, 0, 1, 1, 1, -3),
+        ]),
+        ("Group H", [
+            ("Spain",        2, 2, 0, 0, 6,  8),
+            ("Uruguay",      2, 1, 0, 1, 3,  0),
+            ("Saudi Arabia", 2, 0, 1, 1, 1, -1),
+            ("Cabo Verde",   2, 0, 1, 1, 1, -7),
+        ]),
+        ("Group I", [
+            ("France",  2, 2, 0, 0, 6,  5),
+            ("Norway",  2, 2, 0, 0, 6,  4),
+            ("Senegal", 2, 0, 0, 2, 0, -4),
+            ("Iraq",    2, 0, 0, 2, 0, -5),
+        ]),
+        ("Group J", [
+            ("Argentina", 2, 2, 0, 0, 6,  5),
+            ("Austria",   2, 1, 0, 1, 3,  1),
+            ("Algeria",   2, 1, 0, 1, 3, -1),
+            ("Jordan",    2, 0, 0, 2, 0, -5),
+        ]),
+        ("Group K", [
+            ("Portugal",   2, 2, 0, 0, 6,  5),
+            ("Colombia",   2, 1, 0, 1, 3,  1),
+            ("DR Congo",   2, 0, 1, 1, 1, -1),
+            ("Uzbekistan", 2, 0, 1, 1, 1, -5),
+        ]),
+        ("Group L", [
+            ("England",  2, 1, 1, 0, 4,  1),
+            ("Ghana",    2, 1, 0, 1, 3,  0),
+            ("Croatia",  2, 1, 0, 1, 3,  0),
+            ("Panama",   2, 0, 0, 2, 0, -1),
+        ]),
     ]
     groups = []
     for name, rows in sample:
         teams = []
-        for team, pts, gd in rows:
+        for team, played, won, draw, lost, pts, gd in rows:
             teams.append({
                 "name": team,
-                "played": 1,
-                "won": 1 if pts >= 2 else 0,
-                "draw": 1 if pts == 1 else 0,
-                "lost": 1 if pts == 0 else 0,
+                "played": played,
+                "won": won,
+                "draw": draw,
+                "lost": lost,
                 "points": pts,
                 "goal_diff": gd,
             })
         groups.append({"group": name, "teams": teams})
     return groups
+
+
+# ---------------------------------------------------------------------------
+# WC 2026 knockout bracket (R32 → R16 → QF → SF → Final)
+# ---------------------------------------------------------------------------
+
+# Predetermined R32 slot assignments (published by FIFA before the tournament).
+# slot_a / slot_b codes: "1A" = Group A winner, "2B" = Group B runner-up,
+# "3BCD" = best 3rd-place team from groups B, C or D.
+R32_SLOTS = [
+    {"match_id": "R32_01", "slot_a": "1A",  "slot_b": "3DEF"},
+    {"match_id": "R32_02", "slot_a": "1C",  "slot_b": "3ABG"},
+    {"match_id": "R32_03", "slot_a": "1E",  "slot_b": "3IJK"},
+    {"match_id": "R32_04", "slot_a": "1G",  "slot_b": "3HLK"},
+    {"match_id": "R32_05", "slot_a": "1I",  "slot_b": "2J"},
+    {"match_id": "R32_06", "slot_a": "1K",  "slot_b": "2L"},
+    {"match_id": "R32_07", "slot_a": "2G",  "slot_b": "2H"},
+    {"match_id": "R32_08", "slot_a": "2E",  "slot_b": "2F"},
+    {"match_id": "R32_09", "slot_a": "1B",  "slot_b": "3ACH"},
+    {"match_id": "R32_10", "slot_a": "1D",  "slot_b": "3BFG"},
+    {"match_id": "R32_11", "slot_a": "1F",  "slot_b": "3EHJ"},
+    {"match_id": "R32_12", "slot_a": "1H",  "slot_b": "3CDI"},
+    {"match_id": "R32_13", "slot_a": "1J",  "slot_b": "2I"},
+    {"match_id": "R32_14", "slot_a": "1L",  "slot_b": "2K"},
+    {"match_id": "R32_15", "slot_a": "2B",  "slot_b": "2C"},
+    {"match_id": "R32_16", "slot_a": "2A",  "slot_b": "2D"},
+]
+
+
+def _determine_winner(match: dict) -> str | None:
+    """Extract winner name from a football-data.org match object."""
+    outcome = match.get("score", {}).get("winner")
+    if outcome == "HOME_TEAM":
+        return match["homeTeam"]["name"]
+    if outcome == "AWAY_TEAM":
+        return match["awayTeam"]["name"]
+    return None
+
+
+def fetch_bracket() -> dict:
+    """
+    Return the current WC 2026 knockout bracket.
+
+    Tries football-data.org first (for real results when knockouts have started).
+    Falls back to populating the R32 slot structure from current group standings.
+
+    Response shape:
+    {
+      "current_stage": "GROUP" | "r32" | "r16" | "qf" | "sf" | "final",
+      "rounds": {
+        "r32":   [{ match_id, slot_a, slot_b, team_a, team_b, score_a, score_b, winner, utc_date, status }],
+        "r16":   [...],
+        "qf":    [...],
+        "sf":    [...],
+        "final": [...]
+      }
+    }
+    """
+    stage_map = [
+        ("r32",   "LAST_32"),
+        ("r16",   "LAST_16"),
+        ("qf",    "QUARTER_FINALS"),
+        ("sf",    "SEMI_FINALS"),
+        ("final", "FINAL"),
+    ]
+
+    # Try live API for knockout matches
+    live_rounds: dict = {}
+    for key, api_stage in stage_map:
+        data = _api_get("/competitions/WC/matches", {"stage": api_stage})
+        if data and data.get("matches"):
+            live_rounds[key] = [
+                {
+                    "match_id": str(m["id"]),
+                    "slot_a": "",
+                    "slot_b": "",
+                    "team_a": m["homeTeam"]["name"],
+                    "team_b": m["awayTeam"]["name"],
+                    "score_a": m["score"]["fullTime"].get("home"),
+                    "score_b": m["score"]["fullTime"].get("away"),
+                    "winner": _determine_winner(m),
+                    "utc_date": m.get("utcDate", ""),
+                    "status": m.get("status", "SCHEDULED"),
+                }
+                for m in data["matches"]
+            ]
+
+    if live_rounds:
+        current = next(iter(live_rounds))  # first round with data = current stage
+        return {"current_stage": current, "rounds": live_rounds}
+
+    # Fallback: build from group standings (group stage still running)
+    standings = fetch_group_standings()
+
+    # Build group → positions map
+    group_map: dict[str, dict[int, str]] = {}
+    third_places: list[dict] = []
+
+    for group in standings:
+        letter = group["group"].replace("Group ", "").strip()
+        teams = sorted(
+            group["teams"],
+            key=lambda t: (-t["points"], -t["goal_diff"]),
+        )
+        group_map[letter] = {
+            1: teams[0]["name"] if teams else "TBD",
+            2: teams[1]["name"] if len(teams) > 1 else "TBD",
+            3: teams[2]["name"] if len(teams) > 2 else "TBD",
+        }
+        if len(teams) > 2:
+            third_places.append({
+                "team": teams[2]["name"],
+                "group": letter,
+                "points": teams[2]["points"],
+                "goal_diff": teams[2]["goal_diff"],
+            })
+
+    # 8 best 3rd-place teams by points then GD
+    best_thirds_set = {
+        t["team"]
+        for t in sorted(third_places, key=lambda t: (-t["points"], -t["goal_diff"]))[:8]
+    }
+
+    def resolve_slot(slot: str) -> str:
+        """Turn '1A', '2B', or '3BCD' into a real team name or 'TBD'."""
+        pos = int(slot[0])
+        if pos in (1, 2):
+            return group_map.get(slot[1], {}).get(pos, "TBD")
+        # 3rd-place slot: pick first match from listed groups that's in best_thirds
+        for g in slot[1:]:
+            candidate = group_map.get(g, {}).get(3)
+            if candidate and candidate in best_thirds_set:
+                return candidate
+        return "TBD"
+
+    r32 = [
+        {
+            "match_id": s["match_id"],
+            "slot_a":   s["slot_a"],
+            "slot_b":   s["slot_b"],
+            "team_a":   resolve_slot(s["slot_a"]),
+            "team_b":   resolve_slot(s["slot_b"]),
+            "score_a":  None,
+            "score_b":  None,
+            "winner":   None,
+            "utc_date": None,
+            "status":   "SCHEDULED",
+        }
+        for s in R32_SLOTS
+    ]
+
+    return {
+        "current_stage": "GROUP",
+        "rounds": {
+            "r32":   r32,
+            "r16":   [],
+            "qf":    [],
+            "sf":    [],
+            "final": [],
+        },
+    }
 
 
 if __name__ == "__main__":

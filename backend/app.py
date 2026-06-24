@@ -6,6 +6,7 @@ Endpoints:
   GET  /api/fixtures               -> upcoming WC 2026 fixtures
   POST /api/predict                -> match outcome probabilities
   GET  /api/standings              -> live group standings
+  GET  /api/bracket                -> knockout bracket (R32 → Final)
   GET  /api/xg/teams               -> list of teams with shot data  [Module 2]
   GET  /api/xg/shots?team=France   -> shot map + xG for a team      [Module 2]
 """
@@ -19,7 +20,7 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 from dotenv import load_dotenv
 
-from data.fetch_data import fetch_upcoming_fixtures, fetch_group_standings
+from data.fetch_data import fetch_upcoming_fixtures, fetch_group_standings, fetch_bracket
 from models.outcome_predictor import predict_match, load_or_train
 from models.xg_model import load_xg_model, get_team_shots, get_available_teams
 from models.monte_carlo import simulate_group  # Module 3
@@ -128,6 +129,36 @@ def standings():
 
     except Exception as exc:
         app.logger.exception("standings failed")
+        return jsonify({"error": str(exc)}), 500
+
+
+# ── Knockout Bracket endpoint ────────────────────────────────────────────────
+
+@app.get("/api/bracket")
+def bracket():
+    """
+    Current knockout bracket state.
+
+    Returns R32 slot structure (from standings) during group stage, then
+    real results once knockouts begin (from football-data.org API).
+
+    Response shape:
+    {
+      "current_stage": "GROUP" | "r32" | "r16" | "qf" | "sf" | "final",
+      "rounds": {
+        "r32":   [ { match_id, slot_a, slot_b, team_a, team_b,
+                     score_a, score_b, winner, utc_date, status } ],
+        "r16":   [...],
+        "qf":    [...],
+        "sf":    [...],
+        "final": [...]
+      }
+    }
+    """
+    try:
+        return jsonify(fetch_bracket())
+    except Exception as exc:
+        app.logger.exception("bracket failed")
         return jsonify({"error": str(exc)}), 500
 
 
