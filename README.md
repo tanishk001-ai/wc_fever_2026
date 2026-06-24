@@ -1,3 +1,12 @@
+---
+title: WC Fever 2026
+emoji: ⚽
+colorFrom: green
+colorTo: blue
+sdk: docker
+pinned: false
+---
+
 # WC Fever 2026
 
 Built this during the actual World Cup 2026 because I wanted something more
