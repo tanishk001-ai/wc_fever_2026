@@ -677,23 +677,32 @@ def fetch_bracket() -> dict:
                 "goal_diff": teams[2]["goal_diff"],
             })
 
-    # 8 best 3rd-place teams by points then GD
-    best_thirds_set = {
-        t["team"]
-        for t in sorted(third_places, key=lambda t: (-t["points"], -t["goal_diff"]))[:8]
-    }
+    # Top 8 third-place teams sorted by points then GD
+    best_thirds = sorted(third_places, key=lambda t: (-t["points"], -t["goal_diff"]))[:8]
+
+    # Collect all 3rd-place slot codes from R32 in order, then assign one
+    # unique team to each — no team can appear in two matches.
+    third_slots_in_order = []
+    for s in R32_SLOTS:
+        if s["slot_a"].startswith("3"):
+            third_slots_in_order.append(s["slot_a"])
+        if s["slot_b"].startswith("3"):
+            third_slots_in_order.append(s["slot_b"])
+
+    # Map each 3rd-place slot → a unique team (consume best_thirds one by one)
+    third_slot_assignment: dict[str, str] = {}
+    thirds_iter = iter(best_thirds)
+    for slot_code in third_slots_in_order:
+        t = next(thirds_iter, None)
+        third_slot_assignment[slot_code] = t["team"] if t else "TBD"
 
     def resolve_slot(slot: str) -> str:
         """Turn '1A', '2B', or '3BCD' into a real team name or 'TBD'."""
         pos = int(slot[0])
         if pos in (1, 2):
             return group_map.get(slot[1], {}).get(pos, "TBD")
-        # 3rd-place slot: pick first match from listed groups that's in best_thirds
-        for g in slot[1:]:
-            candidate = group_map.get(g, {}).get(3)
-            if candidate and candidate in best_thirds_set:
-                return candidate
-        return "TBD"
+        # 3rd-place slot: use the pre-assigned unique team
+        return third_slot_assignment.get(slot, "TBD")
 
     r32 = [
         {
