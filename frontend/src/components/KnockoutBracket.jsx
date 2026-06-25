@@ -39,7 +39,7 @@ function fmtDate(utc) {
 }
 
 // ── MatchCard ─────────────────────────────────────────────────────────────────
-function MatchCard({ match, compact }) {
+function MatchCard({ match, compact, isProjected }) {
   const { team_a, team_b, score_a, score_b, winner, status, slot_a, slot_b } = match
   const isPlayed   = status === 'FINISHED'
   const isLive     = status === 'IN_PLAY' || status === 'PAUSED'
@@ -93,18 +93,24 @@ function MatchCard({ match, compact }) {
     <div
       style={{
         background: CARD,
-        border: `1px solid ${isLive ? GREEN : BORDER}`,
+        border: `1px solid ${isLive ? GREEN : isProjected ? '#2a2a2a' : BORDER}`,
         borderRadius: '6px',
         overflow: 'hidden',
         width: compact ? '160px' : '200px',
         flexShrink: 0,
         boxShadow: isLive ? `0 0 8px rgba(0,255,135,0.25)` : 'none',
         transition: 'border-color 0.2s',
+        opacity: isProjected ? 0.85 : 1,
       }}
     >
       {isLive && (
         <div style={{ background: GREEN, textAlign: 'center', padding: '2px 0', fontSize: '9px', fontWeight: 700, color: '#000', letterSpacing: '0.15em' }}>
           LIVE
+        </div>
+      )}
+      {isProjected && !isLive && (
+        <div style={{ background: '#1a1a1a', textAlign: 'center', padding: '2px 0', fontSize: '8px', fontWeight: 700, color: '#f59e0b', letterSpacing: '0.15em', borderBottom: '1px solid #2a2a2a' }}>
+          PROJECTED
         </div>
       )}
       <div style={{ borderBottom: `1px solid ${BORDER}` }}>
@@ -116,7 +122,9 @@ function MatchCard({ match, compact }) {
 }
 
 // ── RoundColumn ───────────────────────────────────────────────────────────────
-function RoundColumn({ roundKey, matches, isCurrent, compact }) {
+function RoundColumn({ roundKey, matches, isCurrent, compact, isGroupStage }) {
+  // R32 during group stage = projected; all other rounds always = not projected
+  const isProjected = isGroupStage && roundKey === 'r32'
   const meta = ROUND_META[roundKey]
   if (!meta) return null
 
@@ -152,7 +160,7 @@ function RoundColumn({ roundKey, matches, isCurrent, compact }) {
       {/* Match cards */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'center' }}>
         {cards.map((m, i) => (
-          <MatchCard key={m.match_id || i} match={m} compact={compact} />
+          <MatchCard key={m.match_id || i} match={m} compact={compact} isProjected={isProjected && m.team_a !== 'TBD' && m.team_b !== 'TBD'} />
         ))}
       </div>
     </div>
@@ -174,28 +182,36 @@ function generatePlaceholders(roundKey) {
 
 // ── Status Banner ─────────────────────────────────────────────────────────────
 function StatusBanner({ currentStage }) {
-  const stageLabel = {
-    GROUP: 'Group stage in progress — R32 bracket shown below based on current standings',
-    r32:   'Round of 32 in progress',
-    r16:   'Round of 16 in progress',
-    qf:    'Quarter-Finals in progress',
-    sf:    'Semi-Finals in progress',
-    final: 'FINAL — Winner takes all',
-  }[currentStage] || ''
+  const isGroupStage = currentStage === 'GROUP'
+
+  const config = {
+    GROUP: {
+      icon: '⏳',
+      color: '#f59e0b',
+      bg: 'rgba(245,158,11,0.06)',
+      border: 'rgba(245,158,11,0.25)',
+      text: 'Group stage ends Jun 27 — matchups below are PROJECTED from current standings. Teams update automatically once group stage is confirmed.',
+    },
+    r32:   { icon: '⚽', color: GREEN, bg: 'rgba(0,255,135,0.06)', border: 'rgba(0,255,135,0.2)', text: 'Round of 32 in progress — results update every 60 seconds.' },
+    r16:   { icon: '⚽', color: GREEN, bg: 'rgba(0,255,135,0.06)', border: 'rgba(0,255,135,0.2)', text: 'Round of 16 in progress.' },
+    qf:    { icon: '⚽', color: GREEN, bg: 'rgba(0,255,135,0.06)', border: 'rgba(0,255,135,0.2)', text: 'Quarter-Finals in progress.' },
+    sf:    { icon: '⚽', color: GREEN, bg: 'rgba(0,255,135,0.06)', border: 'rgba(0,255,135,0.2)', text: 'Semi-Finals in progress.' },
+    final: { icon: '🏆', color: GREEN, bg: 'rgba(0,255,135,0.06)', border: 'rgba(0,255,135,0.2)', text: 'FINAL — Winner takes all.' },
+  }[currentStage] || { icon: '⚽', color: MUTED, bg: 'transparent', border: BORDER, text: '' }
 
   return (
     <div style={{
-      background: 'rgba(0,255,135,0.06)',
-      border: `1px solid rgba(0,255,135,0.2)`,
+      background: config.bg,
+      border: `1px solid ${config.border}`,
       borderRadius: '6px',
       padding: '10px 16px',
       display: 'flex',
-      alignItems: 'center',
+      alignItems: 'flex-start',
       gap: '10px',
       marginBottom: '20px',
     }}>
-      <span style={{ color: GREEN, fontSize: '14px' }}>🏆</span>
-      <span style={{ fontSize: '12px', color: TEXT, letterSpacing: '0.04em' }}>{stageLabel}</span>
+      <span style={{ fontSize: '14px', flexShrink: 0 }}>{config.icon}</span>
+      <span style={{ fontSize: '12px', color: config.color, letterSpacing: '0.03em', lineHeight: '1.5' }}>{config.text}</span>
     </div>
   )
 }
@@ -223,8 +239,9 @@ export default function KnockoutBracket() {
 
   useEffect(() => {
     load()
-    // Auto-refresh every 60 s (during live rounds it will pick up new results)
-    const id = setInterval(load, 60_000)
+    // Refresh every 30s — picks up group stage final standings quickly once
+    // they're confirmed, and pulls live knockout results as they happen.
+    const id = setInterval(load, 30_000)
     return () => clearInterval(id)
   }, [load])
 
@@ -306,6 +323,7 @@ export default function KnockoutBracket() {
               matches={rounds[key] || []}
               isCurrent={current_stage === key}
               compact={compact}
+              isGroupStage={current_stage === 'GROUP'}
             />
           ))}
         </div>
