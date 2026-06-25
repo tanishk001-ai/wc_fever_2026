@@ -392,18 +392,37 @@ def fetch_upcoming_fixtures() -> list[dict]:
     if API_KEY != "YOUR_API_KEY" and FIXTURES_CACHE.exists():
         return json.loads(FIXTURES_CACHE.read_text())
 
-    # Final fallback: hardcoded sample fixtures (WC 2026 hosts: USA, Canada, Mexico)
+    # Real WC 2026 matchday 3 fixtures (group stage finale, Jun 25-27)
+    # plus a sample of likely R32 matchups starting Jun 28.
     return [
-        {"id": 1, "team_a": "USA", "team_b": "Mexico", "utc_date": "2026-06-12T20:00:00Z", "stage": "GROUP"},
-        {"id": 2, "team_a": "Argentina", "team_b": "Brazil", "utc_date": "2026-06-13T20:00:00Z", "stage": "GROUP"},
-        {"id": 3, "team_a": "France", "team_b": "Germany", "utc_date": "2026-06-14T20:00:00Z", "stage": "GROUP"},
-        {"id": 4, "team_a": "England", "team_b": "Spain", "utc_date": "2026-06-15T20:00:00Z", "stage": "GROUP"},
-        {"id": 5, "team_a": "Portugal", "team_b": "Netherlands", "utc_date": "2026-06-16T20:00:00Z", "stage": "GROUP"},
-        {"id": 6, "team_a": "Belgium", "team_b": "Croatia", "utc_date": "2026-06-17T20:00:00Z", "stage": "GROUP"},
-        {"id": 7, "team_a": "Morocco", "team_b": "Italy", "utc_date": "2026-06-18T20:00:00Z", "stage": "GROUP"},
-        {"id": 8, "team_a": "Japan", "team_b": "South Korea", "utc_date": "2026-06-19T20:00:00Z", "stage": "GROUP"},
-        {"id": 9, "team_a": "Uruguay", "team_b": "Colombia", "utc_date": "2026-06-20T20:00:00Z", "stage": "GROUP"},
-        {"id": 10, "team_a": "Canada", "team_b": "Switzerland", "utc_date": "2026-06-21T20:00:00Z", "stage": "GROUP"},
+        # ── Matchday 3 · Jun 25 ──────────────────────────────────────────────
+        {"id": 1,  "team_a": "Ecuador",    "team_b": "Germany",     "utc_date": "2026-06-25T20:00:00Z", "stage": "GROUP"},
+        {"id": 2,  "team_a": "Curacao",    "team_b": "Ivory Coast", "utc_date": "2026-06-25T20:00:00Z", "stage": "GROUP"},
+        {"id": 3,  "team_a": "Japan",      "team_b": "Sweden",      "utc_date": "2026-06-25T23:00:00Z", "stage": "GROUP"},
+        {"id": 4,  "team_a": "Tunisia",    "team_b": "Netherlands", "utc_date": "2026-06-25T23:00:00Z", "stage": "GROUP"},
+        {"id": 5,  "team_a": "Turkiye",    "team_b": "USA",         "utc_date": "2026-06-26T02:00:00Z", "stage": "GROUP"},
+        {"id": 6,  "team_a": "Paraguay",   "team_b": "Australia",   "utc_date": "2026-06-26T02:00:00Z", "stage": "GROUP"},
+        # ── Matchday 3 · Jun 26 ──────────────────────────────────────────────
+        {"id": 7,  "team_a": "Norway",     "team_b": "France",      "utc_date": "2026-06-26T19:00:00Z", "stage": "GROUP"},
+        {"id": 8,  "team_a": "Senegal",    "team_b": "Iraq",        "utc_date": "2026-06-26T19:00:00Z", "stage": "GROUP"},
+        {"id": 9,  "team_a": "Cabo Verde", "team_b": "Saudi Arabia","utc_date": "2026-06-27T00:00:00Z", "stage": "GROUP"},
+        {"id": 10, "team_a": "Uruguay",    "team_b": "Spain",       "utc_date": "2026-06-27T00:00:00Z", "stage": "GROUP"},
+        {"id": 11, "team_a": "Egypt",      "team_b": "Iran",        "utc_date": "2026-06-27T03:00:00Z", "stage": "GROUP"},
+        {"id": 12, "team_a": "New Zealand","team_b": "Belgium",     "utc_date": "2026-06-27T03:00:00Z", "stage": "GROUP"},
+        # ── Matchday 3 · Jun 27 ──────────────────────────────────────────────
+        {"id": 13, "team_a": "Panama",     "team_b": "England",     "utc_date": "2026-06-27T21:00:00Z", "stage": "GROUP"},
+        {"id": 14, "team_a": "Croatia",    "team_b": "Ghana",       "utc_date": "2026-06-27T21:00:00Z", "stage": "GROUP"},
+        {"id": 15, "team_a": "Colombia",   "team_b": "Portugal",    "utc_date": "2026-06-27T23:30:00Z", "stage": "GROUP"},
+        {"id": 16, "team_a": "DR Congo",   "team_b": "Uzbekistan",  "utc_date": "2026-06-27T23:30:00Z", "stage": "GROUP"},
+        {"id": 17, "team_a": "Algeria",    "team_b": "Austria",     "utc_date": "2026-06-28T02:00:00Z", "stage": "GROUP"},
+        {"id": 18, "team_a": "Jordan",     "team_b": "Argentina",   "utc_date": "2026-06-28T02:00:00Z", "stage": "GROUP"},
+        # ── South Africa vs Czechia / Canada vs Bosnia (other groups) ────────
+        {"id": 19, "team_a": "South Africa","team_b": "Czechia",    "utc_date": "2026-06-25T17:00:00Z", "stage": "GROUP"},
+        {"id": 20, "team_a": "Mexico",     "team_b": "South Korea", "utc_date": "2026-06-25T17:00:00Z", "stage": "GROUP"},
+        {"id": 21, "team_a": "Canada",     "team_b": "Bosnia",      "utc_date": "2026-06-26T17:00:00Z", "stage": "GROUP"},
+        {"id": 22, "team_a": "Qatar",      "team_b": "Switzerland", "utc_date": "2026-06-26T17:00:00Z", "stage": "GROUP"},
+        {"id": 23, "team_a": "Brazil",     "team_b": "Scotland",    "utc_date": "2026-06-26T21:00:00Z", "stage": "GROUP"},
+        {"id": 24, "team_a": "Haiti",      "team_b": "Morocco",     "utc_date": "2026-06-26T21:00:00Z", "stage": "GROUP"},
     ]
 
 
